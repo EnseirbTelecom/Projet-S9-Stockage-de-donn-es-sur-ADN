@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: dna_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - dna-network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: dna_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://dna_user:dna_password@postgres:5432/dna_storage
+    volumes:
+      - ./storage:/app/storage
+    networks:
+      - dna-network
+
+  postgres:
+    image: postgres:16
+    container_name: dna_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dna_user
+      POSTGRES_PASSWORD: dna_password
+      POSTGRES_DB: dna_storage
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dna-network
+
+volumes:
+  postgres_data:
+
+networks:
+  dna-network:
+    driver: bridge
