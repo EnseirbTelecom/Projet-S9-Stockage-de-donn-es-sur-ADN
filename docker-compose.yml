@@ -1,51 +1,43 @@
-version: "3.9"
 
 services:
-
-  frontend:
-    build:
-      context: ./frontend
-    container_name: dna_frontend
+  postgres:
+    image: postgres:17
+    container_name: adn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: adn_db
+      POSTGRES_USER: adn_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - dna-network
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adn_user -d adn_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  backend:
-    build:
-      context: ./backend
-    container_name: dna_backend
+  api:
+    build: ./api
+    container_name: adn-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://adn_user:${POSTGRES_PASSWORD}@postgres:5432/adn_db
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-    environment:
-      DATABASE_URL: postgresql://dna_user:dna_password@postgres:5432/dna_storage
-    volumes:
-      - ./storage:/app/storage
-    networks:
-      - dna-network
+      postgres:
+        condition: service_healthy
 
-  postgres:
-    image: postgres:16
-    container_name: dna_postgres
+  web:
+    build: ./web
+    container_name: adn-web
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: dna_user
-      POSTGRES_PASSWORD: dna_password
-      POSTGRES_DB: dna_storage
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - dna-network
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
-
-networks:
-  dna-network:
-    driver: bridge
