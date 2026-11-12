@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from app.parser.encoder_src import EncoderSrcParser
 
 router = APIRouter(
     prefix="/communication",
@@ -9,7 +10,7 @@ router = APIRouter(
 def encode_message(data: str):
     try:
         # TODO : Exécution de la chaîne complète
-        # 1. Encodage
+        Bin = EncoderSrcParser(data)
         # 2. Ajout des mécanismes de protection
         # 3. Transmission dans le canal
         # 4. Réception
