@@ -4,6 +4,7 @@ from app.encoders.one2one_encoder import One2OneEncoder
 from app.encoders.gray_encoder import GrayEncoder
 
 from app.decoders.one2one_decoder import One2OneDecoder
+from app.decoders.gray_decoder import GrayDecoder
 
 from app.wrappers.encode import EncodeWrapper
 from app.wrappers.decode import DecodeWrapper
@@ -42,6 +43,8 @@ def decode(sequence:str, strategy:str):
     try:
         if strategy == "one2one":
             decoder = One2OneDecoder()
+        elif strategy == "gray":
+            decoder = GrayDecoder()
         else:
             raise ValueError("Stratégie inconnue.")
 
