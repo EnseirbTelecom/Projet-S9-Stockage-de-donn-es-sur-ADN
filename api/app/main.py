@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 
 from app.encoders.one2one_encoder import One2OneEncoder
+from app.encoders.gray_encoder import GrayEncoder
 
 from app.wrappers.encode import EncodeWrapper
 
@@ -15,6 +16,8 @@ def encode(data: str, strategy: str):
     try:
         if strategy == "one2one":
             encoder = One2OneEncoder()
+        elif strategy == "gray":
+            encoder = GrayEncoder()
         else:
             raise ValueError("Stratégie inconnue.")
         
