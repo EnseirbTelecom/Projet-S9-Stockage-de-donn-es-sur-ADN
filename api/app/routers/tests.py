@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from app.encoders.one2one_encoder import One2OneEncoder
 from app.decoders.one2one_decoder import One2OneDecoder
 from app.channels.substitution_channel import SubstitutionChannel
+from app.channels.canal_modele_1 import CanalModele1
 from app.protections.replication_protection import ReplicationProtection
 
 from app.wrappers.encode import EncodeWrapper
@@ -58,10 +59,12 @@ def decode(sequence: str, strategy: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/channel")
-def channel(sequence: str, error_rate: float = 0.05, seed: int | None = None, strategy: str = "substitution"):
+def channel(sequence: str, error_rate: float = 0.05, strategy: str ="", pts: float = 0.1, pi: float = 0.1, pd: float = 0.1,seed: int | None = None):
     try:
         if strategy == "substitution":
             canal = SubstitutionChannel(error_rate=error_rate, seed=seed)
+        elif strategy == "modele1":
+            canal = CanalModele1(pts, pi, pd)            
         else:
             raise ValueError("Stratégie inconnue.")
 
