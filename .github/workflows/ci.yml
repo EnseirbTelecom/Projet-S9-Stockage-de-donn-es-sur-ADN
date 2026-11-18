@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  api-tests:
+    name: Tests API (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurer Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Exécuter les tests
+        run: pytest -v
+
+  web-build:
+    name: Build frontend (Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurer Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Construire le frontend
+        run: npm run build

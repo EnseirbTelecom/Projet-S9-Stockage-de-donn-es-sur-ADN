@@ -144,3 +144,47 @@ Quelques règles doivent être conservées tout au long du développement :
 - **Cohérence :** toutes les implémentations d'une même catégorie doivent respecter le contrat défini par leur classe abstraite.
 
 L'objectif est de construire une chaîne de communication modulaire, évolutive et facilement maintenable
+
+## 5. Tests (pytest)
+
+Les tests se trouvent dans `api/tests/`, organisés par catégorie : `test_encoders.py`, `test_decoders.py`, `test_channels.py`, `test_protections.py`, `test_wrappers.py` et `test_api.py` (endpoints).
+
+### Exécuter les tests
+
+```bash
+cd api
+pip install -r requirements.txt -r requirements-dev.txt
+pytest
+```
+
+### Conventions de test
+
+1. **Tester via le wrapper**, pas l'implémentation directe : cela garantit que la classe abstraite, le wrapper et l'implémentation sont cohérents ensemble.
+2. **Un fichier de test par catégorie** d'élément (`test_<categorie>.py`).
+3. Toute nouvelle implémentation doit être couverte par :
+   - le comportement nominal (entrées valides, sortie attendue) ;
+   - les cas d'invalidité (ValueError attendu) ;
+   - un test du wrapper correspondant (délégation) ;
+   - un test d'aller-retour si l'élément fait partie de la chaîne (encodage + protection + canal sans erreur + décodage doit restituer le message d'origine) ;
+   - un test d'intégration des endpoints dans `test_api.py` si un endpoint existe.
+
+### Ajouter un élément de transmission : checklist
+
+1. Créer la classe abstraite dans `core/` si la catégorie est nouvelle.
+2. Créer le wrapper dans `wrappers/`.
+3. Créer l'implémentation dans le dossier de la catégorie (`encoders/`, `decoders/`, `channels/`, `protections/`, ...).
+4. `pip install -r requirements-dev.txt` puis écrire `api/tests/test_<categorie>.py` et compléter `test_api.py`.
+5. Ajouter l'endpoint de test dans `routers/tests.py` et, si nécessaire, l'étape dans `routers/communication.py`.
+6. Lancer `pytest` : les tests existants doivent rester verts (aucune régression des autres implémentations).
+7. Ouvrir une Pull Request : la CI (`pytest` + build du frontend) doit passer.
+
+## 6. Intégration continue (GitHub Actions)
+
+Le workflow `.github/workflows/ci.yml` s'exécute à chaque push sur `main`/`master` et sur chaque Pull Request. Il lance deux jobs en parallèle :
+
+| Job | Contenu |
+|---|---|
+| `api-tests` | Installation des dépendances (Python 3.12) puis `pytest` sur `api/` |
+| `web-build` | Installation des dépendances (Node 22) puis `npm run build` sur `web/` (vérifie que le frontend compile) |
+
+Une Pull Request ne doit être fusionnée que si les deux jobs sont verts.
