@@ -6,6 +6,36 @@ on:
   pull_request:
 
 jobs:
+  branch-updated:
+    name: Branche à jour avec la cible
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier que la branche contient la branche cible
+        run: |
+          TARGET="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}"
+
+          TARGET_SHA="$(git rev-parse "$TARGET")"
+          MERGE_BASE="$(git merge-base HEAD "$TARGET_SHA")"
+
+          if [ "$MERGE_BASE" != "$TARGET_SHA" ]; then
+            echo "La branche n'est pas à jour avec ${{ github.base_ref }}."
+            echo "Commits manquants :"
+            git log --oneline "$MERGE_BASE..$TARGET_SHA" | head -20
+            echo ""
+            echo "Mettre à jour la branche :"
+            echo "  git fetch origin && git rebase origin/${{ github.base_ref }}"
+            echo "ou : git merge origin/${{ github.base_ref }}"
+            exit 1
+          fi
+
+          echo "La branche est à jour avec ${{ github.base_ref }}."
+
   api-tests:
     name: Tests API (pytest)
     runs-on: ubuntu-latest

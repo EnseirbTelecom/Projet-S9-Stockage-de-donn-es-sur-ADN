@@ -11,8 +11,11 @@ Elle s'exécute automatiquement :
 - à chaque **push** sur les branches `main` et `master` ;
 - sur **chaque Pull Request**, quelle que soit la branche source.
 
+Trois jobs tournent, dont deux en parallèle et un réservé aux Pull Request :
+
 | Job | Environnement | Répertoire | Commande vérifiée |
 |---|---|---|---|
+| `branch-updated` | Ubuntu, `ubuntu-latest` | racine | La branche de la PR doit contenir la dernière version de la branche cible (`main`) |
 | `api-tests` | Python 3.12, `ubuntu-latest` | `api/` | `pytest -v` |
 | `web-build` | Node 22, `ubuntu-latest` | `web/` | `npm run build` |
 
@@ -20,6 +23,11 @@ Le job `api-tests` installe `requirements.txt` (dépendances de production,
 versions épinglées) **et** `requirements-dev.txt` (pytest, httpx), puis exécute
 toute la suite de tests. Le job `web-build` vérifie que le frontend compile
 sans erreur avec Vite ; il n'exécute pas l'application.
+
+Le job `branch-updated` ne s'exécute que dans le contexte d'une Pull
+Request : il passe au rouge si des commits de la branche cible ne sont pas
+présents dans la branche de la PR (branche dépassée par `main`), même si le
+code compile et que les tests passent.
 
 ## 2. Ce que la CI garantit
 
@@ -65,7 +73,20 @@ peut échouer à se compiler ; cette situation ne se produit pas en CI
 
 ## 5. Règles pour les collaborateurs
 
-- **Une Pull Request ne doit être fusionnée que si les deux jobs sont verts.**
+- **Une Pull Request ne doit être fusionnée que si les trois jobs sont verts.**
+- **La branche de la PR doit être à jour avec `main`.** Le job
+  `branch-updated` passe au rouge sinon. Pour la mettre à jour :
+
+  ```bash
+  git checkout <votre-branche>
+  git fetch origin
+  git rebase origin/main
+  # résoudre les éventuels conflits, puis :
+  git push --force-with-lease
+  ```
+
+  Un simple `git merge origin/main` (poussé sans force) fonctionne aussi et
+  évite un rebase en présence de conflits complexes.
 - Exécuter `pytest` **avant** de pousser (section 3).
 - Tout nouvel élément de la chaîne doit être couvert par des tests :
   voir la checklist « Ajouter un élément de transmission » dans le
@@ -79,6 +100,7 @@ peut échouer à se compiler ; cette situation ne se produit pas en CI
 
 | Symptôme | Cause probable | Solution |
 |---|---|---|
+| Job `branch-updated` rouge : `La branche n'est pas à jour avec main` | La branche cible a avancé après l'ouverture de la PR | `git fetch origin && git rebase origin/main` (ou `git merge origin/main`), puis pousser — voir section 5 |
 | `FAILED ... ImportError: No module named 'app'` | pytest lancé hors de `api/` | Exécuter `pytest` depuis le répertoire `api/` (le `conftest.py` racine gère les imports) |
 | `error: failed-wheel-build-for-install` sur `psycopg2-binary` en local | Python local >= 3.13 sans wheel précompilé | Utiliser Python 3.12 (comme la CI) ou monter la version de `psycopg2-binary` |
 | Test d'API `500 Internal Server Error` sur un endpoint d'implémentation | Nouvelle implémentation non enregistrée dans le mécanisme de sélection de `routers/tests.py` | Ajouter la classe dans le bloc de sélection et ses imports |

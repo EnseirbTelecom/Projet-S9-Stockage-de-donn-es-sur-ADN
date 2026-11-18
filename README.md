@@ -187,14 +187,15 @@ pytest
 
 ## 6. Intégration continue (GitHub Actions)
 
-Le workflow `.github/workflows/ci.yml` s'exécute à chaque push sur `main`/`master` et sur chaque Pull Request. Il lance deux jobs en parallèle :
+Le workflow `.github/workflows/ci.yml` s'exécute à chaque push sur `main`/`master` et sur chaque Pull Request. Il lance trois jobs :
 
 | Job | Contenu |
 |---|---|
+| `branch-updated` (PR uniquement) | Vérifie que la branche de la PR est à jour avec la branche cible ; passe au rouge sinon |
 | `api-tests` | Installation des dépendances (Python 3.12) puis `pytest` sur `api/` |
 | `web-build` | Installation des dépendances (Node 22) puis `npm run build` sur `web/` (vérifie que le frontend compile) |
 
-Une Pull Request ne doit être fusionnée que si les deux jobs sont verts.
+Une Pull Request ne doit être fusionnée que si les trois jobs sont verts.
 
 La documentation détaillée de la CI (fonctionnement, suivi des résultats sur
 GitHub, erreurs fréquentes, règles pour les collaborateurs) se trouve dans
