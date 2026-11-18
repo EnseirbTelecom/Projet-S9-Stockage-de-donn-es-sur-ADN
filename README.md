@@ -187,7 +187,7 @@ pytest
 
 ## 6. Intégration continue (GitHub Actions)
 
-Le workflow `.github/workflows/ci.yml` s'exécute à chaque push sur `main`/`master` et sur chaque Pull Request. Il lance trois jobs :
+Le workflow `.github/workflows/ci.yml` s'exécute à chaque push, sur toutes les branches du projet, et sur chaque Pull Request. En cas d'exécutions simultanées d'une même branche, la plus ancienne est automatiquement annulée. Il lance trois jobs :
 
 | Job | Contenu |
 |---|---|

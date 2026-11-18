@@ -1,9 +1,17 @@
 name: CI
 
 on:
+  # Toutes les branches : chaque push déclenche la CI, quelle que soit la branche
   push:
-    branches: [main, master]
+  # Toutes les Pull Request, quelle que soit la branche source ou cible
   pull_request:
+
+# Le même push déclenche deux fois la CI quand la branche a une PR ouverte
+# (événements push et pull_request). Ce groupe annule l'exécution en cours
+# pour une même branche et ne conserve que la plus récente.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   branch-updated:
