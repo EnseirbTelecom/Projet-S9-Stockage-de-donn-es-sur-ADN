@@ -136,12 +136,15 @@ Le jury attend une démo plus produit : la page est déjà construite pour cela,
 car le contenu affiché **vient de l'API** et non du code. Pistes, par ordre
 de rendement :
 
-1. **Sélection des stratégies au lieu de valeurs en dur** : transformer la
-   case à cocher de protection en un sélecteur listant les implémentations
-   réellement disponibles dans le backend (ex. plusieurs canaux, plusieurs
-   protections). Côté frontend : remplacer `field-check` par un `<select>` ;
-   côté API : exposer les stratégies (endpoint de catalogue) et les accepter
-   dans `TransmissionRequest`.
+1. **Sélection des stratégies alimentée par le catalogue (implémenté)** :
+   l'endpoint `GET /api/catalog` renvoie le petit JSON de description de
+   chaque implémentation (`slug`, `name`, `description`, `parameters`),
+   enregistrées dans le registre `app/catalog.py` côté API.
+   `ControlPanel.jsx` construit un sélecteur par catégorie (encodeur,
+   décodeur, canal, protection) à partir de ce catalogue : ajouter une
+   implémentation côté backend la rend visible dans le site sans toucher
+   au frontend. Les étapes renvoyées par `/communication/run` portent
+   elles-mêmes `strategy` et `description` issus des métadonnées.
 2. **Mesures comparatives « produit »** : la carte de bilan (`SummaryPanel`)
    est l'endroit idéal pour un taux de correction, un débit de bases par
    octet d'origine, ou une comparaison protection activée / désactivée selon

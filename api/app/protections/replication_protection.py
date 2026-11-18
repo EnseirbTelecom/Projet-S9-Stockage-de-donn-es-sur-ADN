@@ -9,6 +9,22 @@ class ReplicationProtection(BaseProtection):
     corrige les substitutions isolées.
     """
 
+    slug = "replication"
+    name = "Réplication + vote majoritaire"
+    description = (
+        "Répète chaque base un nombre impair de fois avant transmission ; "
+        "à la réception, la base majoritaire de chaque bloc est conservée, "
+        "ce qui corrige les substitutions isolées."
+    )
+    parameters = {
+        "factor": {
+            "type": "integer",
+            "default": 3,
+            "min": 3,
+            "label": "Facteur de réplication (impair >= 3)",
+        }
+    }
+
     def __init__(self, factor: int = 3):
         if factor < 3 or factor % 2 == 0:
             raise ValueError("Le facteur de réplication doit être un entier impair >= 3.")

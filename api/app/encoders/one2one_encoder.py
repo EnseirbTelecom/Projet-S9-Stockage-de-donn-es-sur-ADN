@@ -3,6 +3,21 @@ from app.core.base_encoder import BaseEncodeur
 
 class One2OneEncoder(BaseEncodeur):
 
+    slug = "one2one"
+    name = "One2One : 1 bit -> 1 base"
+    description = (
+        "Associe à chaque bit une base azotée : 0 devient A ou T, "
+        "1 devient C ou G. La base exacte est tirée aléatoirement "
+        "(reproductible avec une graine)."
+    )
+    parameters = {
+        "seed": {
+            "type": "integer",
+            "default": None,
+            "label": "Graine aléatoire (reproductibilité)",
+        }
+    }
+
     def __init__(self, seed: int | None = None):
         self.seed = seed
         self.rng = rd.Random(seed)

@@ -1,9 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.encoders.one2one_encoder import One2OneEncoder
-from app.decoders.one2one_decoder import One2OneDecoder
-from app.channels.substitution_channel import SubstitutionChannel
-from app.protections.replication_protection import ReplicationProtection
+from app.catalog import get_strategy, build_strategy
 
 from app.wrappers.encode import EncodeWrapper
 from app.wrappers.decode import DecodeWrapper
@@ -16,14 +13,9 @@ router = APIRouter(
 )
 
 @router.get("/encode")
-def encode(data: str, strategy: str):
+def encode(data: str, strategy: str = "one2one"):
     try:
-        if strategy == "one2one":
-            encoder = One2OneEncoder()
-        else:
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = EncodeWrapper(encoder)
+        wrapper = EncodeWrapper(get_strategy("encoder", strategy)())
 
         result = wrapper.encode(data)
 
@@ -37,14 +29,9 @@ def encode(data: str, strategy: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/decode")
-def decode(sequence: str, strategy: str):
+def decode(sequence: str, strategy: str = "one2one"):
     try:
-        if strategy == "one2one":
-            decoder = One2OneDecoder()
-        else:
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = DecodeWrapper(decoder)
+        wrapper = DecodeWrapper(get_strategy("decoder", strategy)())
 
         result = wrapper.decode(sequence)
 
@@ -60,12 +47,9 @@ def decode(sequence: str, strategy: str):
 @router.get("/channel")
 def channel(sequence: str, error_rate: float = 0.05, seed: int | None = None, strategy: str = "substitution"):
     try:
-        if strategy == "substitution":
-            canal = SubstitutionChannel(error_rate=error_rate, seed=seed)
-        else:
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = ChannelWrapper(canal)
+        wrapper = ChannelWrapper(
+            build_strategy("channel", strategy, error_rate=error_rate, seed=seed)
+        )
 
         result = wrapper.transmit(sequence)
 
@@ -82,10 +66,9 @@ def channel(sequence: str, error_rate: float = 0.05, seed: int | None = None, st
 @router.get("/protection")
 def protection(sequence: str, mode: str = "protect", factor: int = 3, strategy: str = "replication"):
     try:
-        if strategy != "replication":
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = ProtectionWrapper(ReplicationProtection(factor=factor))
+        wrapper = ProtectionWrapper(
+            build_strategy("protection", strategy, factor=factor)
+        )
 
         if mode == "protect":
             result = wrapper.protect(sequence)

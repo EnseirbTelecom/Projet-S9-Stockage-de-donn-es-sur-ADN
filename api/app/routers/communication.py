@@ -3,10 +3,7 @@ import random
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.encoders.one2one_encoder import One2OneEncoder
-from app.decoders.one2one_decoder import One2OneDecoder
-from app.channels.substitution_channel import SubstitutionChannel
-from app.protections.replication_protection import ReplicationProtection
+from app.catalog import get_strategy, build_strategy
 
 from app.wrappers.encode import EncodeWrapper
 from app.wrappers.decode import DecodeWrapper
@@ -19,6 +16,7 @@ router = APIRouter(
 )
 
 MAX_MESSAGE_LENGTH = 64
+REPLICATION_FACTOR = 3
 
 
 class TransmissionRequest(BaseModel):
@@ -26,6 +24,10 @@ class TransmissionRequest(BaseModel):
     error_rate: float = Field(0.05, ge=0, le=1)
     use_protection: bool = True
     seed: int | None = None
+    encoder: str = "one2one"
+    decoder: str = "one2one"
+    channel: str = "substitution"
+    protection: str = "replication"
 
 
 def text_to_bits(message: str) -> str:
@@ -44,8 +46,7 @@ def bits_to_text(bits: str) -> str:
 def encode_message(data: str):
     """Encodage uniquement (bits -> ADN)."""
     try:
-        encoder = One2OneEncoder()
-        wrapper = EncodeWrapper(encoder)
+        wrapper = EncodeWrapper(get_strategy("encoder", "one2one")())
         encoded = wrapper.encode(data)
 
         return {"message": "Encodage effectué", "data": data, "encoded": encoded}
@@ -58,8 +59,11 @@ def encode_message(data: str):
 def run_transmission(request: TransmissionRequest):
     """Exécution de la chaîne de transmission complète.
 
-    Chaque étape retourne ses données d'entrée / sortie afin de permettre
-    la visualisation détaillée de la transmission côté interface.
+    Les implémentations utilisées à chaque étape proviennent du registre
+    `app/catalog.py` (sélectionnables via les champs encoder / decoder /
+    channel / protection). Chaque étape retourne ses données d'entrée /
+    sortie, décrites par les métadonnées des implémentations, afin de
+    permettre la visualisation détaillée côté interface.
     """
     if not request.message:
         raise HTTPException(status_code=400, detail="Le message ne peut pas être vide.")
@@ -68,6 +72,11 @@ def run_transmission(request: TransmissionRequest):
     apply_protection = request.use_protection
 
     try:
+        encoder_cls = get_strategy("encoder", request.encoder)
+        decoder_cls = get_strategy("decoder", request.decoder)
+        channel_cls = get_strategy("channel", request.channel)
+        protection_cls = get_strategy("protection", request.protection)
+
         steps = []
 
         # Étape 1 : conversion du message texte en bits (UTF-8)
@@ -95,68 +104,72 @@ def run_transmission(request: TransmissionRequest):
         })
 
         # Étape 2 : encodage binaire -> ADN
-        dna = EncodeWrapper(One2OneEncoder(seed=seed)).encode(bits)
+        encoder = build_strategy("encoder", request.encoder, seed=seed)
+        dna = EncodeWrapper(encoder).encode(bits)
         steps.append({
             "id": "encode",
-            "label": "Encodage (one2one)",
-            "description": "Chaque bit est converti en base : 0 -> A ou T, 1 -> C ou G.",
+            "label": "Encodage",
+            "description": encoder.description,
             "kind": "dna",
             "input_kind": "bits",
             "output_kind": "dna",
-            "strategy": "one2one",
+            "strategy": encoder.slug,
             "input": bits,
             "output": dna,
         })
 
-        # Étape 3 (optionnelle) : protection par réplication
+        # Étape 3 (optionnelle) : protection
         if apply_protection:
-            protection = ProtectionWrapper(ReplicationProtection(factor=3))
-            protected = protection.protect(dna)
+            protection = build_strategy(
+                "protection", request.protection, factor=REPLICATION_FACTOR
+            )
+            protected = ProtectionWrapper(protection).protect(dna)
             steps.append({
                 "id": "protect",
-                "label": "Protection (réplication ×3)",
-                "description": "Chaque base est répétée 3 fois afin de permettre la correction d'erreurs à la réception.",
+                "label": "Protection",
+                "description": protection.description,
                 "kind": "dna",
                 "input_kind": "dna",
                 "output_kind": "dna",
-                "strategy": "replication-x3",
+                "strategy": protection.slug,
                 "input": dna,
                 "output": protected,
             })
         else:
             protected = dna
 
-        # Étape 4 : transmission dans le canal bruité
-        channel_result = ChannelWrapper(
-            SubstitutionChannel(error_rate=request.error_rate, seed=seed)
-        ).transmit(protected)
+        # Étape 4 : transmission dans le canal
+        canal = build_strategy("channel", request.channel, error_rate=request.error_rate, seed=seed)
+        channel_result = ChannelWrapper(canal).transmit(protected)
         received = channel_result["output"]
         steps.append({
             "id": "channel",
             "label": "Canal de transmission",
-            "description": f"Transmission avec un taux d'erreur de {request.error_rate:.0%} : des substitutions aléatoires de bases sont introduites.",
+            "description": f"{canal.description} Taux d'erreur : {request.error_rate:.0%}.",
             "kind": "dna",
             "input_kind": "dna",
             "output_kind": "dna",
-            "strategy": "substitution",
+            "strategy": canal.slug,
             "error_rate": request.error_rate,
             "input": protected,
             "output": received,
             "errors": channel_result["errors"],
         })
 
-        # Étape 5 (si protection) : restauration par vote majoritaire
+        # Étape 5 (si protection) : restauration
         if apply_protection:
-            restore_result = ProtectionWrapper(ReplicationProtection(factor=3)).restore(received)
+            restore_result = ProtectionWrapper(
+                build_strategy("protection", request.protection, factor=REPLICATION_FACTOR)
+            ).restore(received)
             restored = restore_result["output"]
             steps.append({
                 "id": "restore",
-                "label": "Restauration (vote majoritaire)",
-                "description": "Pour chaque triplet répété, la base majoritaire est retenue : les substitutions isolées sont corrigées.",
+                "label": "Restauration",
+                "description": protection_cls.description,
                 "kind": "dna",
                 "input_kind": "dna",
                 "output_kind": "dna",
-                "strategy": "replication-x3",
+                "strategy": protection_cls.slug,
                 "input": received,
                 "output": restored,
                 "corrections": restore_result["corrections"],
@@ -165,15 +178,15 @@ def run_transmission(request: TransmissionRequest):
             restored = received
 
         # Étape 6 : décodage ADN -> bits
-        decoded_bits = DecodeWrapper(One2OneDecoder()).decode(restored)
+        decoded_bits = DecodeWrapper(decoder_cls()).decode(restored)
         steps.append({
             "id": "decode",
-            "label": "Décodage (one2one)",
-            "description": "Chaque base est convertie en bit : A ou T -> 0, C ou G -> 1.",
+            "label": "Décodage",
+            "description": decoder_cls.description,
             "kind": "bits",
             "input_kind": "dna",
             "output_kind": "bits",
-            "strategy": "one2one",
+            "strategy": decoder_cls.slug,
             "input": restored,
             "output": decoded_bits,
         })
