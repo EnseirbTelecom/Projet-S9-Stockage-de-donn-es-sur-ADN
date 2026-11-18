@@ -1,5 +1,12 @@
 # Projet-S9-Stockage-de-donn-es-sur-ADN
 
+![CI](https://github.com/ORGANISATION/DEPOT/actions/workflows/ci.yml/badge.svg)
+
+> Remplacer `ORGANISATION/DEPOT` ci-dessus par le nom réel du dépôt GitHub
+> (par exemple `ttrepant/projet-s9-adn`) une fois le dépôt distant créé.
+> La documentation complète de la CI pour les collaborateurs se trouve dans
+> [`docs/CI.md`](docs/CI.md).
+
 # Développement de la chaîne de communication
 
 ## 1. Architecture générale
@@ -188,3 +195,7 @@ Le workflow `.github/workflows/ci.yml` s'exécute à chaque push sur `main`/`mas
 | `web-build` | Installation des dépendances (Node 22) puis `npm run build` sur `web/` (vérifie que le frontend compile) |
 
 Une Pull Request ne doit être fusionnée que si les deux jobs sont verts.
+
+La documentation détaillée de la CI (fonctionnement, suivi des résultats sur
+GitHub, erreurs fréquentes, règles pour les collaborateurs) se trouve dans
+[`docs/CI.md`](docs/CI.md).
