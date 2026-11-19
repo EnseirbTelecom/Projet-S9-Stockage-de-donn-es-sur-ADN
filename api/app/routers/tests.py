@@ -50,7 +50,6 @@ def channel(sequence: str, error_rate: float = 0.05, strategy: str ="", pts: flo
         wrapper = ChannelWrapper(
             build_strategy("channel", strategy, error_rate=error_rate, seed=seed)
         )
-
         result = wrapper.transmit(sequence)
 
         return {

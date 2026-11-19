@@ -22,6 +22,12 @@ REPLICATION_FACTOR = 3
 class TransmissionRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=MAX_MESSAGE_LENGTH)
     error_rate: float = Field(0.05, ge=0, le=1)
+
+    # Paramètres du canal modèle 1
+    pts: float = Field(0.01, ge=0, le=1)
+    pi: float = Field(0.01, ge=0, le=1)
+    pd: float = Field(0.01, ge=0, le=1)
+    
     use_protection: bool = True
     seed: int | None = None
     encoder: str = "one2one"
@@ -35,10 +41,11 @@ def text_to_bits(message: str) -> str:
 
 
 def bits_to_text(bits: str) -> str:
-    if len(bits) % 8 != 0:
-        raise ValueError("Le nombre de bits doit être un multiple de 8.")
-
-    data = bytes(int(bits[i:i + 8], 2) for i in range(0, len(bits), 8))
+    complete_bits = bits[:len(bits) - len(bits) % 8]
+    data = bytes(
+        int(complete_bits[i:i + 8], 2)
+        for i in range(0, len(complete_bits), 8)
+    )
     return data.decode("utf-8", errors="replace")
 
 
@@ -139,13 +146,14 @@ def run_transmission(request: TransmissionRequest):
             protected = dna
 
         # Étape 4 : transmission dans le canal
-        canal = build_strategy("channel", request.channel, error_rate=request.error_rate, seed=seed)
+        #canal = build_strategy("channel", request.channel, error_rate=request.error_rate, seed=seed)
+        canal = build_strategy("channel", request.channel, error_rate=request.error_rate, pts=request.pts, pi=request.pi, pd=request.pd, seed=seed)
         channel_result = ChannelWrapper(canal).transmit(protected)
         received = channel_result["output"]
         steps.append({
             "id": "channel",
             "label": "Canal de transmission",
-            "description": f"{canal.description} Taux d'erreur : {request.error_rate:.0%}.",
+            "description": canal.description,
             "kind": "dna",
             "input_kind": "dna",
             "output_kind": "dna",
@@ -158,14 +166,23 @@ def run_transmission(request: TransmissionRequest):
 
         # Étape 5 (si protection) : restauration
         if apply_protection:
-            restore_result = ProtectionWrapper(
-                build_strategy("protection", request.protection, factor=REPLICATION_FACTOR)
-            ).restore(received)
+            if len(received) % REPLICATION_FACTOR == 0:
+                restore_result = ProtectionWrapper(
+                    build_strategy("protection", request.protection, factor=REPLICATION_FACTOR)
+                ).restore(received)
+                restore_description = protection_cls.description
+            else:
+                restore_result = {"output": received, "corrections": []}
+                restore_description = (
+                    f"{protection_cls.description} La séquence reçue ne forme plus "
+                    "des blocs complets après les insertions/suppressions ; "
+                    "la restauration est ignorée."
+                )
             restored = restore_result["output"]
             steps.append({
                 "id": "restore",
                 "label": "Restauration",
-                "description": protection_cls.description,
+                "description": restore_description,
                 "kind": "dna",
                 "input_kind": "dna",
                 "output_kind": "dna",
@@ -196,7 +213,12 @@ def run_transmission(request: TransmissionRequest):
         steps.append({
             "id": "result",
             "label": "Message reçu",
-            "description": "Les bits décodés sont reconvertis en texte (UTF-8).",
+            "description": (
+                "Les bits décodés sont reconvertis en texte (UTF-8)."
+                if len(decoded_bits) % 8 == 0
+                else "Les bits décodés sont reconvertis en texte (UTF-8) ; "
+                "les bits incomplets en fin de séquence sont ignorés."
+            ),
             "kind": "text",
             "input_kind": "bits",
             "output_kind": "text",
@@ -219,6 +241,7 @@ def run_transmission(request: TransmissionRequest):
                 "bases_sent": len(protected),
                 "errors_injected": errors_injected,
                 "errors_corrected": errors_corrected,
+                "bits_incomplets_ignores": len(decoded_bits) % 8,
                 "protection": apply_protection,
             },
             "integrity": message == received_message,

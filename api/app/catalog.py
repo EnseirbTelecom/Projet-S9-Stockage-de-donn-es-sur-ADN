@@ -16,6 +16,7 @@ import inspect
 from app.encoders.one2one_encoder import One2OneEncoder
 from app.decoders.one2one_decoder import One2OneDecoder
 from app.channels.substitution_channel import SubstitutionChannel
+from app.channels.canal_modele_1 import CanalModele1
 from app.protections.replication_protection import ReplicationProtection
 
 REGISTRY = {
@@ -27,6 +28,7 @@ REGISTRY = {
     },
     "channel": {
         "substitution": SubstitutionChannel,
+        "modele1" :CanalModele1
     },
     "protection": {
         "replication": ReplicationProtection,

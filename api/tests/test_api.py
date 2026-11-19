@@ -122,6 +122,37 @@ class TestCommunicationComplete:
         assert body["integrity"] is True
         assert body["received_message"] == body["original_message"]
 
+    def test_canal_modele1_recoit_ses_parametres(self, client):
+        response = self.run_(
+            client,
+            channel="modele1",
+            use_protection=False,
+            pts=0.0,
+            pi=0.0,
+            pd=0.0,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        channel_step = next(step for step in body["steps"] if step["id"] == "channel")
+        assert channel_step["errors"] == []
+        assert body["integrity"] is True
+
+    def test_canal_modele1_avec_indels_ne_bloque_pas_la_chaine(self, client):
+        response = self.run_(
+            client,
+            channel="modele1",
+            use_protection=True,
+            pts=0.0,
+            pi=0.1,
+            pd=0.1,
+            seed=7,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        step_ids = [step["id"] for step in body["steps"]]
+        assert "restore" in step_ids
+        assert "result" in step_ids
+
     def test_chaine_avec_protection_bas_taux(self, client):
         response = self.run_(client, error_rate=0.05, seed=1234)
         assert response.status_code == 200

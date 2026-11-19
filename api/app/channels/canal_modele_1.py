@@ -12,7 +12,44 @@ BASES = "ATCG"
 
 class CanalModele1(BaseCanal):
 
-    def __init__(self, pts, pi, pd):
+    slug = "modele1"
+    name = "Canal modèle 1"
+    description = (
+        "Modélise les erreurs de transmission d'un canal ADN : avec des "
+        "probabilités données, chaque base peut subir une insertion d'une "
+        "nouvelle base avant elle, une suppression (deletion), une "
+        "substitution par une autre base ou être transmise sans erreur."
+    )
+    parameters = {
+        "pts": {
+            "type": "number",
+            "default": 0.01,
+            "min": 0.0,
+            "max": 1.0,
+            "label": "Probabilité de substitution",
+        },
+        "pi": {
+            "type": "number",
+            "default": 0.01,
+            "min": 0.0,
+            "max": 1.0,
+            "label": "Probabilité d'insertion",
+        },
+        "pd": {
+            "type": "number",
+            "default": 0.01,
+            "min": 0.0,
+            "max": 1.0,
+            "label": "Probabilité de suppression",
+        },
+        "seed": {
+            "type": "integer",
+            "default": None,
+            "label": "Graine aléatoire (reproductibilité)",
+        },
+    }
+
+    def __init__(self, pts=0.01, pi=0.01, pd=0.01, seed=None):
         if not all(0 <= p <= 1 for p in (pts, pi, pd)):
             raise ValueError("Les probabilités doivent être comprises entre 0 et 1.")
 
@@ -22,15 +59,16 @@ class CanalModele1(BaseCanal):
         self.pts = pts
         self.pi = pi
         self.pd = pd
+        self.rng = random.Random(seed)
 
     def substitution(self, base):
-        nouvelle_base = random.choice(BASES)
+        nouvelle_base = self.rng.choice(BASES)
         while nouvelle_base == base:
-            nouvelle_base = random.choice(BASES)
+            nouvelle_base = self.rng.choice(BASES)
         return nouvelle_base
 
     def insertion(self, base):
-        return random.choice(BASES)
+        return self.rng.choice(BASES)
 
     def deletion(self, base):
         return ""
@@ -46,7 +84,7 @@ class CanalModele1(BaseCanal):
 
         while i < len(sequence):
             base = sequence[i]
-            tirage = random.random()
+            tirage = self.rng.random()
 
             if tirage < self.pi:
                 nouvelle_base = self.insertion(base)
