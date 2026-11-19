@@ -17,6 +17,22 @@ Chaque nouvel élément de la chaîne de communication (encodeur, décodeur, can
 2. **Un wrapper**, placé dans `wrappers/`, qui fournit une interface commune permettant d'utiliser les différentes implémentations.
 3. **Une implémentation concrète**, placée dans le dossier correspondant à la catégorie de l'élément (`encoders/`, `decoders/`, `channels/`, etc.).
 
+### Métadonnées et catalogue
+
+Chaque implémentation décrit son identité par des **attributs de classe** — `slug`, `name`, `description` et `parameters` — hérités du contrat de sa classe abstraite. La méthode `describe()` retourne ce petit JSON :
+
+```json
+{
+  "category": "channel",
+  "slug": "substitution",
+  "name": "Canal à substitutions",
+  "description": "Modélise les erreurs de synthèse / séquençage...",
+  "parameters": { "error_rate": { "type": "number", "default": 0.05 }, "seed": { "type": "integer" } }
+}
+```
+
+Les implémentations sont enregistrées dans le **registre central** `api/app/catalog.py` (`REGISTRY`). L'endpoint `GET /catalog` retourne le JSON de description de chaque implémentation, groupé par catégorie : c'est ce catalogue qui alimente les sélecteurs de stratégies et les descriptions du site web. **Ajouter une implémentation ne demande donc aucune modification du frontend** : classe + entrée dans `REGISTRY`, et le site s'adapte.
+
 Chaque nouvel élément doit également être accessible depuis l'API pour pouvoir être testé individuellement et intégré à la chaîne complète.
 
 ## 2. Étapes d'implémentation
@@ -103,7 +119,7 @@ Chaque nouvelle implémentation doit disposer d'un endpoint permettant de la tes
 Dans `tests.py`, il faut :
 1. Importer la nouvelle implémentation.
 2. Importer le wrapper correspondant.
-3. Ajouter l'implémentation dans le mécanisme de sélection des algorithmes.
+3. Ajouter l'implémentation dans le mécanisme de sélection des algorithmes (le registre `REGISTRY` dans `api/app/catalog.py`).
 4. Appeler le wrapper pour exécuter le traitement.
 5. Retourner le résultat au format JSON.
 6. Gérer les erreurs avec des exceptions HTTP adaptées.
@@ -132,6 +148,7 @@ Avant de soumettre une modification, vérifier les points suivants :
 - [ ] La classe abstraite est présente dans `core/` si une nouvelle catégorie d'élément est créée.
 - [ ] Le wrapper est présent dans `wrappers/`.
 - [ ] L'implémentation concrète est présente dans le dossier correspondant.
+- [ ] Les métadonnées (`slug`, `name`, `description`, `parameters`) sont renseignées et l'implémentation est enregistrée dans `REGISTRY` (`api/app/catalog.py`) — le site web s'adapte automatiquement via `GET /catalog`.
 - [ ] Toutes les méthodes abstraites sont implémentées.
 - [ ] L'élément est accessible via un endpoint dans `routers/tests.py`.
 - [ ] Les entrées et sorties sont correctement validées.
@@ -179,11 +196,12 @@ pytest
 
 1. Créer la classe abstraite dans `core/` si la catégorie est nouvelle.
 2. Créer le wrapper dans `wrappers/`.
-3. Créer l'implémentation dans le dossier de la catégorie (`encoders/`, `decoders/`, `channels/`, `protections/`, ...).
-4. `pip install -r requirements-dev.txt` puis écrire `api/tests/test_<categorie>.py` et compléter `test_api.py`.
-5. Ajouter l'endpoint de test dans `routers/tests.py` et, si nécessaire, l'étape dans `routers/communication.py`.
-6. Lancer `pytest` : les tests existants doivent rester verts (aucune régression des autres implémentations).
-7. Ouvrir une Pull Request : la CI (`pytest` + build du frontend) doit passer.
+3. Créer l'implémentation dans le dossier de la catégorie (`encoders/`, `decoders/`, `channels/`, `protections/`, ...), avec ses métadonnées (`slug`, `name`, `description`, `parameters`).
+4. Enregistrer l'implémentation dans `REGISTRY` (`api/app/catalog.py`).
+5. `pip install -r requirements-dev.txt` puis écrire `api/tests/test_<categorie>.py` et compléter `test_api.py`.
+6. Ajouter l'endpoint de test dans `routers/tests.py` et, si nécessaire, l'étape dans `routers/communication.py`.
+7. Lancer `pytest` : les tests existants doivent rester verts (aucune régression des autres implémentations).
+8. Ouvrir une Pull Request : la CI (`pytest` + build du frontend) doit passer. À la fusion, le site web affiche automatiquement la nouvelle implémentation via `GET /catalog`.
 
 ## 6. Intégration continue (GitHub Actions)
 

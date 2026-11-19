@@ -24,12 +24,30 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-export function runTransmission({ message, errorRate, useProtection, seed }) {
+export function fetchCatalog() {
+  return request('/catalog');
+}
+
+export function runTransmission({
+  message,
+  errorRate,
+  useProtection,
+  seed,
+  encoder,
+  decoder,
+  channel,
+  protection,
+}) {
   const body = {
     message,
     error_rate: errorRate,
     use_protection: useProtection,
   };
+
+  if (encoder) body.encoder = encoder;
+  if (decoder) body.decoder = decoder;
+  if (channel) body.channel = channel;
+  if (useProtection && protection) body.protection = protection;
 
   if (seed !== '' && seed !== null && seed !== undefined && !Number.isNaN(Number(seed))) {
     body.seed = Number(seed);

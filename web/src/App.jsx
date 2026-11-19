@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { runTransmission } from './lib/api';
+import { runTransmission, fetchCatalog } from './lib/api';
 import ControlPanel from './components/ControlPanel';
 import Pipeline from './components/Pipeline';
 import StepDetail from './components/StepDetail';
@@ -42,6 +42,23 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [catalog, setCatalog] = useState(null);
+
+  // Catalogue des implémentations (sélecteurs de stratégies)
+  useEffect(() => {
+    let cancelled = false;
+    fetchCatalog()
+      .then((data) => {
+        if (!cancelled) setCatalog(data);
+      })
+      .catch(() => {
+        // Le panneau fonctionne sans catalogue (les sélecteurs sont masqués)
+        if (!cancelled) setCatalog({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const start = async (params) => {
     setLoading(true);
@@ -97,7 +114,7 @@ export default function App() {
       </header>
 
       <main className="content">
-        <ControlPanel onRun={start} loading={loading} />
+        <ControlPanel catalog={catalog} onRun={start} loading={loading} />
 
         {error && <div className="banner banner-error">{error}</div>}
 

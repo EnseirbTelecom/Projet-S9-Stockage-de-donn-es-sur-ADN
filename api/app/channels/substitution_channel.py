@@ -12,6 +12,27 @@ class SubstitutionChannel(BaseCanal):
     Modélise les erreurs de synthèse / séquençage de l'ADN.
     """
 
+    slug = "substitution"
+    name = "Canal à substitutions"
+    description = (
+        "Modélise les erreurs de synthèse / séquençage : avec une "
+        "probabilité donnée, chaque base est remplacée par une autre base."
+    )
+    parameters = {
+        "error_rate": {
+            "type": "number",
+            "default": 0.05,
+            "min": 0.0,
+            "max": 1.0,
+            "label": "Taux d'erreur",
+        },
+        "seed": {
+            "type": "integer",
+            "default": None,
+            "label": "Graine aléatoire (reproductibilité)",
+        },
+    }
+
     def __init__(self, error_rate: float = 0.05, seed: int | None = None):
         if not 0 <= error_rate <= 1:
             raise ValueError("Le taux d'erreur doit être compris entre 0 et 1.")
