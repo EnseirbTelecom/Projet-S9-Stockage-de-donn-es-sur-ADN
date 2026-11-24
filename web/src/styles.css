@@ -894,6 +894,53 @@ input:focus {
   color: var(--color-muted);
 }
 
+/* Options développeur (encodeur / protection / graine) */
+
+.dev-toggle {
+  border: none;
+  background: none;
+  padding: 2px 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  text-decoration: underline dotted;
+  align-self: flex-end;
+}
+
+.dev-toggle:hover {
+  color: var(--color-text);
+}
+
+.dev-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: #f8fafc;
+}
+
+.dev-options .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 1 200px;
+}
+
+.dev-options select,
+.dev-options input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #fbfcfe;
+  font-family: inherit;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 820px) {

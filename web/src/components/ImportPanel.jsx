@@ -14,6 +14,9 @@ function formatSizeBases(count) {
 export default function ImportPanel() {
   const [file, setFile] = useState(null);
   const [seed, setSeed] = useState('');
+  const [encoder, setEncoder] = useState('one2one');
+  const [protection, setProtection] = useState('');
+  const [showDevOptions, setShowDevOptions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [stored, setStored] = useState([]);
@@ -38,7 +41,11 @@ export default function ImportPanel() {
     setLoading(true);
     setError(null);
     try {
-      const data = await importDnaFile(file, { seed: seed.trim() });
+      const data = await importDnaFile(file, {
+        encoder,
+        protection,
+        seed: seed.trim(),
+      });
       setResult(data);
       refreshStored();
     } catch (e) {
@@ -72,15 +79,51 @@ export default function ImportPanel() {
           )}
         </label>
 
-        <label className="field field-seed">
-          <span className="field-label">Graine aléatoire (reproductibilité)</span>
-          <input
-            type="number"
-            value={seed}
-            placeholder="aléatoire"
-            onChange={(e) => setSeed(e.target.value)}
-          />
-        </label>
+        {showDevOptions ? (
+          <div className="dev-options">
+            <label className="field">
+              <span className="field-label">Encodeur</span>
+              <select value={encoder} onChange={(e) => setEncoder(e.target.value)}>
+                <option value="one2one">One2One — 1 bit → 1 base</option>
+                <option value="gray">Gray — 2 bits → 1 base</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span className="field-label">Protection</span>
+              <select value={protection} onChange={(e) => setProtection(e.target.value)}>
+                <option value="">Aucune</option>
+                <option value="replication">Réplication ×3</option>
+              </select>
+            </label>
+
+            <label className="field field-seed">
+              <span className="field-label">Graine aléatoire (reproductibilité)</span>
+              <input
+                type="number"
+                value={seed}
+                placeholder="aléatoire"
+                onChange={(e) => setSeed(e.target.value)}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="dev-toggle"
+              onClick={() => setShowDevOptions(false)}
+            >
+              Masquer les options
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="dev-toggle"
+            onClick={() => setShowDevOptions(true)}
+          >
+            Options développeur
+          </button>
+        )}
 
         <button type="submit" className="btn-primary" disabled={!canImport}>
           {loading ? 'Encodage en cours...' : 'Encoder dans l\'ADN'}
@@ -118,6 +161,10 @@ export default function ImportPanel() {
             <div className="stat-item">
               <span className="stat-value">{result.encoder}</span>
               <span className="stat-label">Encodeur</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{result.protection ?? '—'}</span>
+              <span className="stat-label">Protection</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">{result.seed ?? '—'}</span>

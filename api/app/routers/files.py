@@ -20,7 +20,9 @@ from sqlalchemy.orm import Session
 from app.database import DnaFile, get_db
 from app.encoders.gray_encoder import GrayEncoder
 from app.encoders.one2one_encoder import One2OneEncoder
+from app.protections.replication_protection import ReplicationProtection
 from app.wrappers.encode import EncodeWrapper
+from app.wrappers.protection import ProtectionWrapper
 
 router = APIRouter(prefix="/files", tags=["Fichiers ADN"])
 
@@ -39,6 +41,13 @@ def _build_encoder(slug: str, seed: int | None):
     )
 
 
+def _build_protection(slug: str):
+    """Sélection du mécanisme de protection ('replication' actuellement)."""
+    if slug == "replication":
+        return ReplicationProtection(factor=3)
+    raise ValueError(f"Mécanisme de protection '{slug}' inconnu. Choix possibles : replication.")
+
+
 def _bits_from_bytes(data: bytes) -> str:
     return "".join(f"{byte:08b}" for byte in data)
 
@@ -47,6 +56,7 @@ def _bits_from_bytes(data: bytes) -> str:
 async def import_file(
     file: UploadFile,
     encoder: str = Query("one2one", description="Slug de l'encodeur (one2one, gray)."),
+    protection: str = Query("", description="Mécanisme de protection ('replication') ou vide."),
     seed: int | None = Query(None, description="Graine aléatoire (reproductibilité)."),
     db: Session = Depends(get_db),
 ):
@@ -67,6 +77,12 @@ async def import_file(
     try:
         encoder_strategy = _build_encoder(encoder, seed)
         dna = EncodeWrapper(encoder_strategy).encode(bits)
+
+        # Protection optionnelle : la séquence stockée est alors la version
+        # protégée (redondante), comme dans la chaîne de transmission.
+        stored = dna
+        if protection:
+            stored = ProtectionWrapper(_build_protection(protection)).protect(dna)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -75,10 +91,10 @@ async def import_file(
         sha256=hashlib.sha256(data).hexdigest(),
         byte_size=len(data),
         bit_count=len(bits),
-        base_count=len(dna),
+        base_count=len(stored),
         encoder=encoder,
         seed=seed,
-        sequence=dna,
+        sequence=stored,
     )
     db.add(record)
     db.commit()
@@ -91,6 +107,7 @@ async def import_file(
         "bit_count": record.bit_count,
         "base_count": record.base_count,
         "encoder": record.encoder,
+        "protection": protection if protection else "aucune",
         "seed": record.seed,
         "sha256": record.sha256,
         "created_at": record.created_at.isoformat() if record.created_at else None,

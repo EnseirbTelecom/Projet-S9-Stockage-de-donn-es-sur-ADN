@@ -68,6 +68,38 @@ class TestImport:
         assert body["bit_count"] == 16
         assert body["base_count"] == 8
 
+    def test_import_protection_replication(self, client):
+        files = {"file": ("p.txt", b"ABCD", "text/plain")}
+        body = client.post(
+            "/files/import",
+            params={"protection": "replication", "seed": 7},
+            files=files,
+        ).json()
+        # one2one : 4 octets -> 32 bits -> 32 bases, répliquées x3
+        assert body["protection"] == "replication"
+        assert body["bit_count"] == 32
+        assert body["base_count"] == 96
+
+        # La séquence stockée reste décodable après restauration
+        sequence = client.get(f"/files/{body['id']}/download").text
+        from app.protections.replication_protection import ReplicationProtection
+        from app.decoders.one2one_decoder import One2OneDecoder
+
+        restored = ReplicationProtection(factor=3).restore(sequence)["output"]
+        decoded_bits = One2OneDecoder().decode(restored)
+        decoded = bytes(
+            int(decoded_bits[i:i + 8], 2) for i in range(0, len(decoded_bits), 8)
+        )
+        assert decoded.decode("utf-8") == "ABCD"
+
+    def test_import_mecanisme_protection_inconnu(self, client):
+        response = client.post(
+            "/files/import",
+            params={"protection": "hamming"},
+            files={"file": ("a.txt", b"abc", "text/plain")},
+        )
+        assert response.status_code == 400
+
     def test_import_graine_reproductible(self, client):
         files = {"file": ("r.txt", b"seed", "text/plain")}
         body1 = client.post("/files/import", params={"seed": 42}, files=files).json()

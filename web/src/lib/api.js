@@ -64,11 +64,13 @@ export function runTransmission({
 
 // Import d'un fichier : le corps est un FormData (multipart), on laisse le
 // navigateur générer l'en-tête Content-Type avec la boundary.
-export async function importDnaFile(file, { seed } = {}) {
+export async function importDnaFile(file, { encoder, protection, seed } = {}) {
   const form = new FormData();
   form.append('file', file);
 
   const params = new URLSearchParams();
+  if (encoder) params.set('encoder', encoder);
+  if (protection) params.set('protection', protection);
   if (seed !== '' && seed !== null && seed !== undefined && !Number.isNaN(Number(seed))) {
     params.set('seed', String(Number(seed)));
   }
