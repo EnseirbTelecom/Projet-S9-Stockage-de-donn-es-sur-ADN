@@ -12,33 +12,35 @@ router = APIRouter(
     tags=["Tests"]
 )
 
-@router.get("/encode")
-def encode(data: str, strategy: str = "one2one"):
+@router.post("/encode")
+def encode_message(data: str, encoder: str = "gray"):
     try:
-        wrapper = EncodeWrapper(get_strategy("encoder", strategy)())
-
-        result = wrapper.encode(data)
+        encoder_instance = build_strategy("encoder", encoder)
+        wrapper = EncodeWrapper(encoder_instance)
+        encoded = wrapper.encode(data)
 
         return {
-            "input": data,
-            "encoded": result,
-            "encoder": strategy
+            "message": "Encodage effectué",
+            "data": data,
+            "encoded": encoded,
+            "encoder": encoder_instance.slug
         }
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/decode")
-def decode(sequence: str, strategy: str = "one2one"):
+@router.post("/decode")
+def decode_message(data: str, decoder: str = "gray"):
     try:
-        wrapper = DecodeWrapper(get_strategy("decoder", strategy)())
-
-        result = wrapper.decode(sequence)
+        decoder_instance = build_strategy("decoder", decoder)
+        wrapper = DecodeWrapper(decoder_instance)
+        decoded = wrapper.decode(data)
 
         return {
-            "input": sequence,
-            "decoded": result,
-            "decoder": strategy
+            "message": "Encodage effectué",
+            "data": data,
+            "encoded": decoded,
+            "encoder": decoder_instance.slug
         }
 
     except ValueError as e:

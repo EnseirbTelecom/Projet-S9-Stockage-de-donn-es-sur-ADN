@@ -14,21 +14,28 @@ chaque implémentation, qui est consommé par le site web.
 import inspect
 
 from app.encoders.one2one_encoder import One2OneEncoder
+from app.encoders.gray_encoder import GrayEncoder
+
 from app.decoders.one2one_decoder import One2OneDecoder
+from app.decoders.gray_decoder import GrayDecoder
+
 from app.channels.substitution_channel import SubstitutionChannel
 from app.channels.canal_modele_1 import CanalModele1
+
 from app.protections.replication_protection import ReplicationProtection
 
 REGISTRY = {
     "encoder": {
-        "one2one": One2OneEncoder,
+        "gray" : GrayEncoder,
+        "one2one": One2OneEncoder
     },
     "decoder": {
-        "one2one": One2OneDecoder,
+        "gray" : GrayDecoder,
+        "one2one": One2OneDecoder
     },
     "channel": {
-        "substitution": SubstitutionChannel,
-        "modele1" :CanalModele1
+        "modele1" :CanalModele1,
+        "substitution": SubstitutionChannel
     },
     "protection": {
         "replication": ReplicationProtection,

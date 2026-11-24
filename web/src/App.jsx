@@ -158,9 +158,9 @@ export default function App() {
             <h2>Comment fonctionne la démonstration</h2>
             <ol className="intro-list">
               <li>Saisir un message puis lancer la transmission : celui-ci est converti en bits (UTF-8).</li>
-              <li>L'encodeur <code>one2one</code> transforme chaque bit en base azotée : 0 devient A ou T, 1 devient C ou G.</li>
+              <li>Le block de conversion <code>gray</code> transforme chaque bit en base azotée selon le mapping suivant : 00 → A, 01 → T, 11 → C et 10 → G.</li>
               <li>Si la protection est activée, chaque base est répliquée trois fois avant transmission.</li>
-              <li>Le canal introduit un taux d'erreurs configurable (substitutions de bases, comme lors du séquençage).</li>
+              <li>Le canal introduit un taux d'erreurs configurable (substitutions, insertion et/ou protection).</li>
               <li>À la réception, le vote majoritaire corrige les bases altérées, puis la séquence est décodée et le message reconstruit.</li>
               <li>Chaque étape est visualisées en détail : cliquez sur un nœud du pipeline ou laissez l'animation se dérouler.</li>
             </ol>

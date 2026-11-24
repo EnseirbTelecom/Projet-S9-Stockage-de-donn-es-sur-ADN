@@ -104,13 +104,13 @@ export default function ControlPanel({ catalog, onRun, loading }) {
 
       <div className="control-row controls-inline">
         <StrategySelect
-          label="Encodeur"
+          label="Conversion : Binaire -> ADN"
           items={catalog?.encoder}
           value={encoder}
           onChange={setEncoder}
         />
         <StrategySelect
-          label="Décodeur"
+          label="Conversion : ADN -> Binaire"
           items={catalog?.decoder}
           value={decoder}
           onChange={setDecoder}

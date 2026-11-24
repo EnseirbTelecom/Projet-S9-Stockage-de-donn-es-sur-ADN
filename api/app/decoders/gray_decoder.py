@@ -2,6 +2,14 @@ from app.core.base_decoder import BaseDecodeur
 
 class GrayDecoder(BaseDecodeur):
 
+    slug = "gray"
+    name = "Démapping de Gray"
+    description = (
+        "Convertit chaque base azotée en une paire de bits en se basant sur un mapping de Gray :"
+        "A → 00\n , T → 01\n , C → 11\n et G → 10\n "
+    )
+    parameters = {}
+
     def decode(self, sequence):
         # Mapping inverse
         inverse_mapping = {"A": "00", "T": "01", "C": "11", "G": "10"}
