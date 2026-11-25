@@ -37,10 +37,10 @@ def decode_message(data: str, decoder: str = "gray"):
         decoded = wrapper.decode(data)
 
         return {
-            "message": "Encodage effectué",
+            "message": "Décodage effectué",
             "data": data,
-            "encoded": decoded,
-            "encoder": decoder_instance.slug
+            "decoded": decoded,
+            "decoder": decoder_instance.slug
         }
 
     except ValueError as e:

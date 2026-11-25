@@ -23,33 +23,42 @@ class TestSante:
 
 class TestEndpointEncode:
     def test_encode_one2one(self, client):
-        response = client.get("/tests/encode", params={"data": "0101", "strategy": "one2one"})
+        response = client.post("/tests/encode", params={"data": "0101", "encoder": "one2one"})
         assert response.status_code == 200
         body = response.json()
-        assert body["input"] == "0101"
+        assert body["data"] == "0101"
         assert len(body["encoded"]) == 4
         assert all(base in "ATCG" for base in body["encoded"])
         assert body["encoder"] == "one2one"
 
+    def test_encode_gray_aller_retour(self, client):
+        encoded = client.post(
+            "/tests/encode", params={"data": "000111", "encoder": "gray"}
+        ).json()["encoded"]
+        decoded = client.post(
+            "/tests/decode", params={"data": encoded, "decoder": "gray"}
+        ).json()["decoded"]
+        assert decoded == "000111"
+
     def test_encode_strategie_inconnue(self, client):
-        response = client.get("/tests/encode", params={"data": "01", "strategy": "inconnu"})
+        response = client.post("/tests/encode", params={"data": "01", "encoder": "inconnu"})
         assert response.status_code == 400
 
     def test_encode_entree_invalide(self, client):
-        response = client.get("/tests/encode", params={"data": "ADN", "strategy": "one2one"})
+        response = client.post("/tests/encode", params={"data": "ADN", "encoder": "one2one"})
         assert response.status_code == 400
 
 
 class TestEndpointDecode:
     def test_decode_one2one(self, client, sequence):
-        response = client.get("/tests/decode", params={"sequence": sequence, "strategy": "one2one"})
+        response = client.post("/tests/decode", params={"data": sequence, "decoder": "one2one"})
         assert response.status_code == 200
         body = response.json()
         assert body["decoded"] == "0011"
         assert body["decoder"] == "one2one"
 
     def test_decode_strategie_inconnue(self, client):
-        response = client.get("/tests/decode", params={"sequence": "ATCG", "strategy": "inconnu"})
+        response = client.post("/tests/decode", params={"data": "ATCG", "decoder": "inconnu"})
         assert response.status_code == 400
 
 
