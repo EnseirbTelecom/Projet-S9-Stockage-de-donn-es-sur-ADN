@@ -1,9 +1,25 @@
 import { useEffect, useState } from 'react';
+import { fetchCatalog } from './lib/api';
 import ImportPanel from './components/ImportPanel';
 import DemoPage from './components/DemoPage';
 
 export default function App() {
   const [page, setPage] = useState('home');
+  const [catalog, setCatalog] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCatalog()
+      .then((data) => {
+        if (!cancelled) setCatalog(data);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalog({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Navigation partageable et bouton retour du navigateur (#accueil / #demo)
   useEffect(() => {
@@ -62,7 +78,7 @@ export default function App() {
             <ImportPanel />
           </>
         ) : (
-          <DemoPage />
+          <DemoPage catalog={catalog} />
         )}
       </main>
 

@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.database import Base, engine
 from app.routers.tests import router as tests_router
 from app.routers.communication import router as com_router
+from app.routers.catalog import router as catalog_router
 from app.routers.files import router as files_router
 
 
@@ -20,6 +21,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(tests_router)
 app.include_router(com_router)
+app.include_router(catalog_router)
 app.include_router(files_router)
 
 

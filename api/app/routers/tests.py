@@ -1,9 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.encoders.one2one_encoder import One2OneEncoder
-from app.decoders.one2one_decoder import One2OneDecoder
-from app.channels.substitution_channel import SubstitutionChannel
-from app.protections.replication_protection import ReplicationProtection
+from app.catalog import get_strategy, build_strategy
 
 from app.wrappers.encode import EncodeWrapper
 from app.wrappers.decode import DecodeWrapper
@@ -15,58 +12,46 @@ router = APIRouter(
     tags=["Tests"]
 )
 
-@router.get("/encode")
-def encode(data: str, strategy: str):
+@router.post("/encode")
+def encode_message(data: str, encoder: str = "gray"):
     try:
-        if strategy == "one2one":
-            encoder = One2OneEncoder()
-        else:
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = EncodeWrapper(encoder)
-
-        result = wrapper.encode(data)
+        encoder_instance = build_strategy("encoder", encoder)
+        wrapper = EncodeWrapper(encoder_instance)
+        encoded = wrapper.encode(data)
 
         return {
-            "input": data,
-            "encoded": result,
-            "encoder": strategy
+            "message": "Encodage effectué",
+            "data": data,
+            "encoded": encoded,
+            "encoder": encoder_instance.slug
         }
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/decode")
-def decode(sequence: str, strategy: str):
+@router.post("/decode")
+def decode_message(data: str, decoder: str = "gray"):
     try:
-        if strategy == "one2one":
-            decoder = One2OneDecoder()
-        else:
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = DecodeWrapper(decoder)
-
-        result = wrapper.decode(sequence)
+        decoder_instance = build_strategy("decoder", decoder)
+        wrapper = DecodeWrapper(decoder_instance)
+        decoded = wrapper.decode(data)
 
         return {
-            "input": sequence,
-            "decoded": result,
-            "decoder": strategy
+            "message": "Décodage effectué",
+            "data": data,
+            "decoded": decoded,
+            "decoder": decoder_instance.slug
         }
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/channel")
-def channel(sequence: str, error_rate: float = 0.05, seed: int | None = None, strategy: str = "substitution"):
+def channel(sequence: str, error_rate: float = 0.05, strategy: str ="", pts: float = 0.1, pi: float = 0.1, pd: float = 0.1,seed: int | None = None):
     try:
-        if strategy == "substitution":
-            canal = SubstitutionChannel(error_rate=error_rate, seed=seed)
-        else:
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = ChannelWrapper(canal)
-
+        wrapper = ChannelWrapper(
+            build_strategy("channel", strategy, error_rate=error_rate, seed=seed)
+        )
         result = wrapper.transmit(sequence)
 
         return {
@@ -82,10 +67,9 @@ def channel(sequence: str, error_rate: float = 0.05, seed: int | None = None, st
 @router.get("/protection")
 def protection(sequence: str, mode: str = "protect", factor: int = 3, strategy: str = "replication"):
     try:
-        if strategy != "replication":
-            raise ValueError("Stratégie inconnue.")
-
-        wrapper = ProtectionWrapper(ReplicationProtection(factor=factor))
+        wrapper = ProtectionWrapper(
+            build_strategy("protection", strategy, factor=factor)
+        )
 
         if mode == "protect":
             result = wrapper.protect(sequence)

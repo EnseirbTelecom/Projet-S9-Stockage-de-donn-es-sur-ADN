@@ -241,6 +241,25 @@ input:focus {
   accent-color: var(--color-accent);
 }
 
+.field-parameter {
+  flex: 1 1 150px;
+  min-width: 130px;
+}
+
+.field-parameter input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.field-validation {
+  flex-basis: 100%;
+  color: #b42318;
+  font-size: 0.85rem;
+}
+
 .field-check {
   display: flex;
   align-items: center;
@@ -265,6 +284,26 @@ input:focus {
   border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
+}
+
+.field-strategy {
+  flex: 0 1 210px;
+}
+
+.field-strategy select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.field-strategy select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ---------- Boutons / badges ---------- */

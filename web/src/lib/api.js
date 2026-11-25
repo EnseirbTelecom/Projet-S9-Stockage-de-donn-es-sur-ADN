@@ -33,18 +33,18 @@ export function fetchCatalog() {
 
 export function runTransmission({
   message,
-  errorRate,
   useProtection,
   seed,
   encoder,
   decoder,
   channel,
+  channelParameters = {},
   protection,
 }) {
   const body = {
     message,
-    error_rate: errorRate,
     use_protection: useProtection,
+    ...channelParameters,
   };
 
   if (encoder) body.encoder = encoder;

@@ -1,6 +1,22 @@
 from app.core.base_encoder import BaseEncodeur
 
 class GrayEncoder(BaseEncodeur):
+
+    slug = "gray"
+    name = "Mapping de Gray"
+    description = (
+        "Convertit chaque paire de bits en une base azotée selon un mapping de Gray :"
+        "00 → A\n , 01 → T\n , 11 → C\n et 10 → G\n "
+        "La séquence binaire doit être non vide et contenir un "
+        "nombre pair de bits."
+    )
+    parameters = {
+        "seed": {
+            "type": "integer",
+            "default": None,
+            "label": "Graine aléatoire (reproductibilité)",
+        }
+    }
      
     def encode(self, data):
 
