@@ -8,8 +8,14 @@ suivre pour les collaborateurs. Il complète la section 6 du `README.md`.
 La CI est définie par le fichier [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 Elle s'exécute automatiquement :
 
-- à chaque **push** sur les branches `main` et `master` ;
-- sur **chaque Pull Request**, quelle que soit la branche source.
+- à chaque **push**, sur **toutes les branches** du dépôt (pas seulement
+  `main`/`master`) ;
+- sur **chaque Pull Request**, quelle que soit la branche source ou cible.
+
+Lorsqu'une branche a une Pull Request ouverte, un même push déclenche deux
+événements (`push` et `pull_request`) : la clé `concurrency` du workflow
+regroupe ces exécutions par branche et annule automatiquement la plus ancienne,
+de sorte qu'une seule exécution reste active par branche à la fois.
 
 Trois jobs tournent, dont deux en parallèle et un réservé aux Pull Request :
 
